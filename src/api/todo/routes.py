@@ -2,10 +2,13 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import List, Optional
 from urllib.parse import urljoin
+import os
 
 from beanie import PydanticObjectId
 from fastapi import HTTPException, Response
+from fastapi.staticfiles import StaticFiles
 from starlette.requests import Request
+from fastapi.responses import HTMLResponse
 
 from .app import app
 from .models import (CreateUpdateTodoItem, CreateUpdateTodoList, TodoItem,
@@ -191,3 +194,6 @@ async def delete_list_item(
     if not todo_item:
         raise HTTPException(status_code=404, detail="Todo item not found")
     await todo_item.delete()
+
+# Serve static files from the 'dist' directory
+app.mount("/", StaticFiles(directory="dist", html=True), name="static")

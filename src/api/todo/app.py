@@ -1,8 +1,9 @@
 import motor
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 from beanie import init_beanie
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, RedirectResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -45,7 +46,7 @@ app = FastAPI(
     description="Simple Todo API",
     version="2.0.0",
     title="Simple Todo API",
-    docs_url="/",
+    docs_url="/swagger",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -54,6 +55,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# @app.middleware("http")
+# async def redirect_root_to_index(request: Request, call_next):
+#     if request.url.path == "/":
+#         return RedirectResponse(url="/index.html")
+#     response = await call_next(request)
+#     return response
 
 if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     exporter = AzureMonitorTraceExporter.from_connection_string(

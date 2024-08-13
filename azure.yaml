@@ -9,10 +9,9 @@ workflows:
       - azd: provision
       - azd: deploy --all
 services:
-  web:
-    project: ./src/web
-    dist: dist
-    language: js
+  api:
+    project: ./src/api
+    language: py
     host: appservice
     hooks:
       # Creates a temporary `.env.local` file for the build command. Vite will automatically use it during build.
@@ -23,18 +22,31 @@ services:
       prepackage:
         windows:
           shell: pwsh
-          run: 'echo "VITE_API_BASE_URL=""$env:API_BASE_URL""" > .env.local ; echo "VITE_APPLICATIONINSIGHTS_CONNECTION_STRING=""$env:APPLICATIONINSIGHTS_CONNECTION_STRING""" >> .env.local'
+          run: |
+            rm .\dist\* -Recurse -Force
+            cd ..\web
+            npm ci
+            npm run build
+            echo "VITE_API_BASE_URL=""$env:API_BASE_URL""" > .env.local
+            echo "VITE_APPLICATIONINSIGHTS_CONNECTION_STRING=""$env:APPLICATIONINSIGHTS_CONNECTION_STRING""" >> .env.local
+            cp -Recurse .\dist ..\api\dist
+
         posix:
           shell: sh
-          run: 'echo VITE_API_BASE_URL=\"$API_BASE_URL\" > .env.local && echo VITE_APPLICATIONINSIGHTS_CONNECTION_STRING=\"$APPLICATIONINSIGHTS_CONNECTION_STRING\" >> .env.local'    
+          run: |
+             rm -rf ./dist/*
+             cd ../web
+             rm -rf ./dist/*
+             npm ci
+             npm run build
+             echo VITE_API_BASE_URL=\"$API_BASE_URL\" > .env.local
+             echo VITE_APPLICATIONINSIGHTS_CONNECTION_STRING=\"$APPLICATIONINSIGHTS_CONNECTION_STRING\" >> .env.local
+             cp -r ./dist ../api/
+
       postdeploy:
         windows:
           shell: pwsh
-          run: 'rm .env.local'
+          run: 'cd ..\web && rm .env.local'
         posix:
           shell: sh
-          run: 'rm .env.local'
-  api:
-    project: ./src/api
-    language: py
-    host: appservice
+          run: 'cd ../web && rm .env.local'
